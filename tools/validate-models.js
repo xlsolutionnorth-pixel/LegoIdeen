@@ -9,7 +9,7 @@
 const path = require('path');
 const www = path.join(__dirname, '..', 'app', 'src', 'main', 'assets', 'www', 'js');
 const Bricks = require(path.join(www, 'bricks.js'));
-const MODELS = require(path.join(www, 'models.js'));
+const MODELS = require(path.join(www, 'models.js')).concat(require(path.join(www, 'models-extra.js')));
 
 let failed = 0;
 const ids = new Set();

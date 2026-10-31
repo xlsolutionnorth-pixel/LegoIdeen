@@ -83,7 +83,7 @@
     <section class="view" id="view-steine">
       <div class="section-head">
         <h2>Meine Steine</h2>
-        <label class="switch"><input type="checkbox" id="onlyOwned" checked><span>Nur vorhandene</span></label>
+        <label class="switch"><input type="checkbox" id="onlyOwned"><span>Nur vorhandene</span></label>
       </div>
       <p class="muted small">Tippe auf + oder −, um Steine von Hand zu ändern. Die Farbe spielt keine Rolle.</p>
       <div id="invList"></div>
@@ -159,10 +159,22 @@
     <div class="confetti" id="confetti" aria-hidden="true"></div>
   </div>
 
+  <!-- Einzelner Stein in 3D -->
+  <div class="dlg-back" id="partDlg" hidden>
+    <div class="dlg" role="dialog" aria-modal="true" aria-labelledby="partTitle">
+      <button class="icon-btn dlg-close" id="partClose" aria-label="Schließen"><svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></svg></button>
+      <div class="dlg-stage"><canvas id="partCanvas"></canvas></div>
+      <h3 id="partTitle">Stein</h3>
+      <p class="muted small" id="partSub"></p>
+      <p class="muted small">☝ Mit dem Finger drehen</p>
+    </div>
+  </div>
+
   <div class="toast" id="toast" role="status"></div>
 
   <script src="js/bricks.js"></script>
   <script src="js/models.js"></script>
+  <script src="js/models-extra.js"></script>
   <script src="js/renderer.js"></script>
   <script src="js/detect.js"></script>
   <script src="js/app.js"></script>

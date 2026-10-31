@@ -197,16 +197,34 @@ main { padding: 16px 16px calc(var(--tabbar-h) + 96px + env(safe-area-inset-bott
 .switch { display: flex; align-items: center; gap: 8px; font-weight: 700; font-size: 14px; }
 .switch input { width: 20px; height: 20px; accent-color: var(--blue); }
 .group-title { margin: 20px 0 10px; color: var(--muted); font-size: 15px; text-transform: uppercase; letter-spacing: 0.6px; }
-.inv { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 10px; }
-.inv-item {
-  background: var(--card); border-radius: var(--radius); padding: 8px 10px 10px; box-shadow: 0 4px 0 var(--line);
-  display: grid; justify-items: center; gap: 4px; text-align: center;
+.inv { display: grid; gap: 8px; }
+.inv-row {
+  display: grid; grid-template-columns: 76px 1fr auto; gap: 12px; align-items: center;
+  background: var(--card); border-radius: var(--radius); padding: 6px 10px 6px 6px; box-shadow: 0 4px 0 var(--line);
 }
-.inv-item.zero { opacity: 0.5; }
-.inv-item img { width: 92px; height: 74px; object-fit: contain; }
-.inv-item .name { font-weight: 800; font-size: 14px; }
-.extra-item { display: flex; align-items: center; gap: 10px; background: var(--card); border-radius: 14px; padding: 10px 12px; margin-bottom: 8px; box-shadow: 0 3px 0 var(--line); }
-.extra-item .name { flex: 1; font-weight: 700; font-size: 14px; }
+.inv-row.zero .inv-text, .inv-row.zero .inv-icon img { opacity: 0.5; }
+.inv-icon {
+  position: relative; width: 76px; height: 62px; border: 0; padding: 0; border-radius: 13px; cursor: pointer;
+  background: linear-gradient(160deg, #FFF8EA, #F6E7CB); display: grid; place-items: center; overflow: hidden;
+}
+.inv-icon img { width: 100%; height: 100%; object-fit: contain; }
+.inv-icon .rot3d {
+  position: absolute; right: 4px; bottom: 4px; font-size: 9px; font-weight: 900; color: #fff; background: var(--blue);
+  border-radius: 6px; padding: 1px 4px;
+}
+.qmark { font-size: 28px; font-weight: 900; color: var(--muted); }
+.inv-text { min-width: 0; }
+.inv-text .name { font-weight: 800; font-size: 16px; }
+.inv-text .sub { font-size: 12px; color: var(--muted); font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.more { width: 100%; margin-top: 12px; }
+
+/* ---------- Stein-Dialog ---------- */
+.dlg-back { position: fixed; inset: 0; z-index: 70; background: rgba(43, 33, 24, 0.45); display: grid; place-items: center; padding: 20px; animation: pop-in 0.18s; }
+.dlg { position: relative; width: min(380px, 100%); background: var(--bg); border-radius: 24px; padding: 14px 16px 16px; text-align: center; box-shadow: 0 6px 0 var(--line); }
+.dlg-stage { height: 240px; border-radius: 18px; background: radial-gradient(ellipse at 50% 35%, #FFFFFF 0%, #FBEFD8 75%, #F3DFBC 100%); overflow: hidden; margin-bottom: 10px; }
+.dlg-stage canvas { width: 100%; height: 100%; display: block; }
+.dlg p { margin: 4px 0 0; }
+.dlg-close { position: absolute; top: 22px; right: 24px; z-index: 2; }
 
 /* ---------- Ideen ---------- */
 .btn-design {

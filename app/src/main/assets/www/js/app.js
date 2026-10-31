@@ -7,6 +7,7 @@
   const $ = (s) => document.querySelector(s);
   const $$ = (s) => Array.from(document.querySelectorAll(s));
   const PARTS = Bricks.PARTS;
+  const ALL_MODELS = MODELS.concat(window.MODELS_EXTRA || []);
   const native = window.Android || null;
 
   // ---------------------------------------------------------------------
@@ -345,7 +346,7 @@
       if (it.partId) { parts[it.partId] = (parts[it.partId] || 0) + it.count; n += it.count; }
       else if (it.state === 'other') {
         const k = it.apiId || it.apiName;
-        extra[k] = extra[k] || { name: it.apiName, count: 0 };
+        extra[k] = extra[k] || { name: it.apiName, img: it.imgUrl || '', count: 0 };
         extra[k].count += it.count;
         n += it.count;
       }
@@ -382,7 +383,7 @@
   function addScanToInventory() {
     const t = scanTotals();
     Object.entries(t.parts).forEach(([pid, n]) => store.add(pid, n));
-    Object.entries(t.extra).forEach(([k, e]) => store.addExtra(k, e.name, e.count));
+    Object.entries(t.extra).forEach(([k, e]) => { store.addExtra(k, e.name, e.count); if (e.img && store.data.extra[k]) store.data.extra[k].img = e.img; });
     store.save();
     lastIdeas = null;
     $('#scanActions').hidden = true;
@@ -407,6 +408,10 @@
     toast('Sammlung geleert');
   });
 
+  function stepperHtml(n) {
+    return `<div class="stepper"><button data-d="-1" aria-label="weniger">−</button><span class="n">${n}</span><button data-d="1" aria-label="mehr">+</button></div>`;
+  }
+
   function renderInventory() {
     const only = $('#onlyOwned').checked;
     const inv = store.data.inv;
@@ -421,10 +426,11 @@
       html += `<h3 class="group-title">${Bricks.KIND_LABEL[k]}</h3><div class="inv">`;
       groups[k].forEach((id) => {
         const n = inv[id] || 0;
-        html += `<div class="inv-item${n ? '' : ' zero'}" data-id="${id}">
-          <img src="${partImg(id)}" alt="">
-          <div class="name">${esc(PARTS[id].n)}</div>
-          <div class="stepper"><button data-d="-1" aria-label="weniger">−</button><span class="n">${n}</span><button data-d="1" aria-label="mehr">+</button></div>
+        const P = PARTS[id];
+        html += `<div class="inv-row${n ? '' : ' zero'}" data-id="${id}">
+          <button class="inv-icon" aria-label="${esc(P.n)} in 3D ansehen"><img src="${partImg(id)}" alt=""><span class="rot3d">3D</span></button>
+          <div class="inv-text"><div class="name">${esc(P.n)}</div><div class="sub">Teilenummer ${id}</div></div>
+          ${stepperHtml(n)}
         </div>`;
       });
       html += '</div>';
@@ -437,8 +443,8 @@
     $('#invList').innerHTML = html;
     const e2s = $('#emptyToScan');
     if (e2s) e2s.addEventListener('click', () => show('scan'));
-    $$('#invList .inv-item').forEach((el) => {
-      el.querySelectorAll('button').forEach((b) => b.addEventListener('click', () => {
+    $$('#invList .inv-row').forEach((el) => {
+      el.querySelectorAll('.stepper button').forEach((b) => b.addEventListener('click', () => {
         store.add(el.dataset.id, Number(b.dataset.d));
         store.save();
         lastIdeas = null;
@@ -446,15 +452,18 @@
         el.querySelector('.n').textContent = n;
         el.classList.toggle('zero', !n);
       }));
+      el.querySelector('.inv-icon').addEventListener('click', () => openPart(el.dataset.id));
     });
 
     const extras = Object.entries(store.data.extra);
     $('#extraList').innerHTML = extras.length ? `<h3 class="group-title">Sonderteile</h3>
       <p class="muted small">Diese Teile hat die App erkannt, sie kommen aber in den Bauideen (noch) nicht vor.</p>
-      ${extras.map(([k, e]) => `<div class="extra-item" data-k="${esc(k)}"><span class="name">${esc(e.name)}</span>
-        <div class="stepper"><button data-d="-1">−</button><span class="n">${e.count}</span><button data-d="1">+</button></div></div>`).join('')}` : '';
-    $$('#extraList .extra-item').forEach((el) => {
-      el.querySelectorAll('button').forEach((b) => b.addEventListener('click', () => {
+      <div class="inv">${extras.map(([k, e]) => `<div class="inv-row" data-k="${esc(k)}">
+        <div class="inv-icon">${e.img ? `<img src="${esc(e.img)}" alt="" onerror="this.replaceWith(Object.assign(document.createElement('span'),{className:'qmark',textContent:'?'}))">` : '<span class="qmark">?</span>'}</div>
+        <div class="inv-text"><div class="name">${esc(e.name)}</div><div class="sub">Sonderteil</div></div>
+        ${stepperHtml(e.count)}</div>`).join('')}</div>` : '';
+    $$('#extraList .inv-row').forEach((el) => {
+      el.querySelectorAll('.stepper button').forEach((b) => b.addEventListener('click', () => {
         const k = el.dataset.k;
         const e = store.data.extra[k];
         if (!e) return;
@@ -464,6 +473,32 @@
       }));
     });
   }
+
+  // Einzelnen Stein in 3D ansehen (drehbar)
+  let partView = null;
+  function openPart(pid) {
+    const P = PARTS[pid];
+    $('#partTitle').textContent = P.n;
+    $('#partSub').textContent = `Teilenummer ${pid}`;
+    $('#partDlg').hidden = false;
+    if (!partView) {
+      try { partView = new BrickView($('#partCanvas'), { interactive: true }); } catch (e) { return; }
+    }
+    partView.setModel([[pid, 0, 0, 0, 'Y', 0]], { az: 0.6, el: 0.55 });
+    partView.zoom = 0.95;
+    const t0 = performance.now();
+    const spinPart = (now) => {
+      if ($('#partDlg').hidden) return;
+      if (!partView._dragging && now - t0 > 300) partView.az += 0.012;
+      partView.resize();
+      partView.render(now);
+      requestAnimationFrame(spinPart);
+    };
+    requestAnimationFrame(spinPart);
+  }
+  function closePart() { $('#partDlg').hidden = true; }
+  $('#partClose').addEventListener('click', closePart);
+  $('#partDlg').addEventListener('click', (e) => { if (e.target.id === 'partDlg') closePart(); });
 
   // ---------------------------------------------------------------------
   // 3) Ideen: Was kann ich bauen?
@@ -489,7 +524,7 @@
     const btn = $('#btnDesign');
     btn.classList.add('busy');
     setTimeout(() => {
-      const all = MODELS.map(analyse);
+      const all = ALL_MODELS.map(analyse);
       lastIdeas = {
         can: shuffle(all.filter((a) => !a.missingN)),
         almost: all.filter((a) => a.missingN > 0 && a.missingN <= 4).sort((a, b) => a.missingN - b.missingN || a.model.bricks.length - b.model.bricks.length),
@@ -510,10 +545,10 @@
         <p class="small">Neugierig? Hier sind schon mal alle Modelle:</p></div>
         <div class="grid" id="gAllPreview"></div>`;
       $('#ideasToScan').addEventListener('click', () => show('scan'));
-      fillGrid($('#gAllPreview'), MODELS.map(analyse), animate);
+      fillGrid($('#gAllPreview'), ALL_MODELS.map(analyse), animate);
       return;
     }
-    const cats = ['Alle', ...new Set(MODELS.map((m) => m.cat))];
+    const cats = ['Alle', ...new Set(ALL_MODELS.map((m) => m.cat))];
     const f = (list) => list.filter((a) => ideaFilter === 'Alle' || a.model.cat === ideaFilter);
     const can = f(lastIdeas.can), almost = f(lastIdeas.almost), rest = f(lastIdeas.rest);
     box.innerHTML = `<div class="filters">${cats.map((c) => `<button class="filter${c === ideaFilter ? ' active' : ''}" data-c="${esc(c)}">${esc(c)}</button>`).join('')}</div>
@@ -534,14 +569,19 @@
     return 'Es fehlt: ' + (parts.length > 2 ? parts.slice(0, 2).join(', ') + ' …' : parts.join(', '));
   }
 
-  /** Karten in ein Raster füllen; Vorschaubilder werden nach und nach gezeichnet */
-  function fillGrid(grid, list, animate) {
-    grid.innerHTML = '';
-    list.forEach((a, i) => {
+  /** Karten in ein Raster füllen (seitenweise); Vorschaubilder entstehen erst, wenn sie sichtbar werden */
+  const PAGE = 24;
+  function fillGrid(grid, list, animate, shown = 0) {
+    if (!shown) grid.innerHTML = '';
+    const more = grid.nextElementSibling && grid.nextElementSibling.classList.contains('more') ? grid.nextElementSibling : null;
+    if (more) more.remove();
+    const end = Math.min(list.length, shown + PAGE);
+    for (let i = shown; i < end; i++) {
+      const a = list[i];
       const m = a.model;
       const card = document.createElement('button');
       card.className = 'card';
-      if (animate) card.style.animationDelay = Math.min(i, 12) * 45 + 'ms';
+      if (animate) card.style.animationDelay = Math.min(i - shown, 12) * 45 + 'ms';
       else card.style.animation = 'none';
       const isFav = store.data.fav.includes(m.id), isBuilt = store.data.built.includes(m.id);
       card.innerHTML = `<div class="thumb"><div class="spinner"></div></div>
@@ -551,12 +591,30 @@
         ${a.missingN ? `<div class="missing">${esc(missingText(a))}</div>` : (store.total() ? '<div class="ok">Alle Steine da!</div>' : '')}`;
       card.addEventListener('click', () => openGuide(m.id));
       grid.appendChild(card);
-      queueThumb(card.querySelector('.thumb'), m);
-    });
+      watchThumb(card.querySelector('.thumb'), m);
+    }
+    if (end < list.length) {
+      const btn = document.createElement('button');
+      btn.className = 'btn btn-ghost more';
+      btn.textContent = `Mehr zeigen (${list.length - end} weitere)`;
+      btn.addEventListener('click', () => fillGrid(grid, list, true, end));
+      grid.after(btn);
+    }
   }
 
   const thumbQueue = [];
   let thumbBusy = false;
+  const thumbObserver = 'IntersectionObserver' in window ? new IntersectionObserver((entries) => {
+    entries.forEach((e) => {
+      if (!e.isIntersecting) return;
+      thumbObserver.unobserve(e.target);
+      queueThumb(e.target, e.target._model);
+    });
+  }, { rootMargin: '300px' }) : null;
+  function watchThumb(el, model) {
+    if (thumbObserver) { el._model = model; thumbObserver.observe(el); }
+    else queueThumb(el, model);
+  }
   function queueThumb(el, model) {
     thumbQueue.push({ el, model });
     if (!thumbBusy) { thumbBusy = true; setTimeout(drainThumbs, 0); }
@@ -567,7 +625,7 @@
       const { el, model } = thumbQueue.shift();
       if (!el.isConnected) continue;
       const t = getThumbs();
-      el.innerHTML = t ? `<img src="${t.model(model.id, model.bricks)}" alt="${esc(model.name)}">` : '<span class="muted">Keine Vorschau</span>';
+      el.innerHTML = t ? `<img src="${t.model(model.id, model.bricks, model.view)}" alt="${esc(model.name)}">` : '<span class="muted">Keine Vorschau</span>';
     }
     if (thumbQueue.length) setTimeout(drainThumbs, 16);
     else thumbBusy = false;
@@ -577,8 +635,8 @@
   // 4) Merkliste
   // ---------------------------------------------------------------------
   function renderMerk() {
-    const favs = MODELS.filter((m) => store.data.fav.includes(m.id)).map(analyse);
-    const built = MODELS.filter((m) => store.data.built.includes(m.id)).map(analyse);
+    const favs = ALL_MODELS.filter((m) => store.data.fav.includes(m.id)).map(analyse);
+    const built = ALL_MODELS.filter((m) => store.data.built.includes(m.id)).map(analyse);
     const fg = $('#favGrid'), bg = $('#builtGrid');
     if (favs.length) fillGrid(fg, favs, false);
     else fg.innerHTML = '<p class="muted">Tippe in einer Bauanleitung auf das Herz, um eine Figur zu merken.</p>';
@@ -593,7 +651,7 @@
   let guide = null; // { model, step, analysis }
 
   function openGuide(id) {
-    const model = MODELS.find((m) => m.id === id);
+    const model = ALL_MODELS.find((m) => m.id === id);
     if (!model) return;
     guide = { model, step: 0, analysis: analyse(model) };
     $('#guide').hidden = false;
@@ -610,7 +668,7 @@
       }
       $('#guideCanvas').addEventListener('pointerdown', () => { $('#guideHint').style.opacity = 0; });
     }
-    guideView.setModel(model.bricks);
+    guideView.setModel(model.bricks, model.view || {});
     const dots = $('#stepDots');
     const n = model.bricks.length;
     dots.innerHTML = n <= 40 ? '<i></i>'.repeat(n) : '';
@@ -730,6 +788,7 @@
     onPhotoError(msg) { toast(msg || 'Foto konnte nicht geladen werden'); },
     /** Zurück-Taste: true = in der App behandelt, false = App schließen */
     onBack() {
+      if (!$('#partDlg').hidden) { closePart(); return true; }
       if (guide) { closeGuide(); return true; }
       if (scan && current === 'scan') { resetScan(); return true; }
       if (current !== 'scan') { show('scan'); return true; }

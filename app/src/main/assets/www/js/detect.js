@@ -261,6 +261,7 @@
       partId,
       apiId: String(top.id || ''),
       apiName: String(top.name || top.id || 'Unbekanntes Teil'),
+      imgUrl: typeof top.img_url === 'string' ? top.img_url : '',
       score: Number(top.score || 0),
       alternatives,
     };

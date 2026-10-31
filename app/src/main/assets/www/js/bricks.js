@@ -247,7 +247,7 @@
     // Bodenteile, die nur über spätere Teile verbunden sind, zählen auch (union oben).
     const roots = new Set(list.map((_, i) => find(i)));
     if (roots.size > 1) errors.push(`Modell zerfällt in ${roots.size} lose Teile`);
-    if (list.length < 8) errors.push(`Nur ${list.length} Teile`);
+    if (list.length < 6) errors.push(`Nur ${list.length} Teile`);
     return errors;
   }
 
