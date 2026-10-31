@@ -1,0 +1,50 @@
+plugins {
+    id 'com.android.application'
+}
+
+// Auf GitHub zählt jede neue Version automatisch hoch
+def runNumber = (System.getenv("GITHUB_RUN_NUMBER") ?: "1") as int
+
+android {
+    namespace 'de.bausteinideen.app'
+    compileSdk 35
+
+    defaultConfig {
+        applicationId "de.bausteinideen.app"
+        minSdk 26
+        targetSdk 34
+        versionCode runNumber
+        versionName "1.${runNumber}"
+    }
+
+    // Fester Schlüssel, damit neue Versionen die alte App ersetzen können
+    // (sonst müsste man die App jedes Mal deinstallieren und die Sammlung ginge verloren).
+    signingConfigs {
+        debug {
+            storeFile file('debug.keystore')
+            storePassword 'android'
+            keyAlias 'androiddebugkey'
+            keyPassword 'android'
+        }
+    }
+
+    buildTypes {
+        debug {
+            signingConfig signingConfigs.debug
+        }
+    }
+
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_17
+        targetCompatibility JavaVersion.VERSION_17
+    }
+
+    lint {
+        abortOnError false
+        checkReleaseBuilds false
+    }
+}
+
+dependencies {
+    implementation 'androidx.core:core:1.13.1'
+}

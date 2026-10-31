@@ -1,0 +1,170 @@
+<!doctype html>
+<html lang="de">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+  <title>Baustein-Ideen</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <header class="topbar">
+    <div class="logo" aria-hidden="true"><span></span><span></span><span></span><span></span></div>
+    <h1 id="title">Baustein-Ideen</h1>
+    <div class="count-pill" id="countPill" title="Steine in deiner Sammlung">0 Steine</div>
+  </header>
+
+  <main>
+    <!-- 1) Fotografieren -->
+    <section class="view active" id="view-scan">
+      <div id="scanStart">
+        <div class="hero">
+          <div class="hero-bricks" aria-hidden="true">
+            <i style="--c:#C91A09;--x:6%;--y:30%;--r:-12deg"></i>
+            <i style="--c:#0055BF;--x:28%;--y:60%;--r:8deg"></i>
+            <i style="--c:#F2CD37;--x:52%;--y:22%;--r:20deg"></i>
+            <i style="--c:#237841;--x:72%;--y:56%;--r:-6deg"></i>
+          </div>
+          <h2>Fotografiere deine Steine!</h2>
+          <p>Die App erkennt die Steine und merkt sich, was du hast.</p>
+        </div>
+
+        <div class="segmented" role="radiogroup" aria-label="Was ist auf dem Foto?">
+          <button class="seg active" data-mode="haufen" role="radio" aria-checked="true">Viele Steine</button>
+          <button class="seg" data-mode="einzeln" role="radio" aria-checked="false">Ein Stein</button>
+        </div>
+
+        <div class="big-actions">
+          <button class="btn btn-primary btn-xl" id="btnCamera">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h3l2-3h6l2 3h3a1 1 0 0 1 1 1v11a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V8a1 1 0 0 1 1-1z"/><circle cx="12" cy="13" r="4"/></svg>
+            Foto machen
+          </button>
+          <button class="btn btn-ghost" id="btnGallery">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="4" width="18" height="16" rx="2"/><circle cx="9" cy="10" r="2"/><path d="M21 16l-5-5-9 9"/></svg>
+            Bild aus der Galerie
+          </button>
+        </div>
+
+        <div class="tips">
+          <h3>So klappt es am besten</h3>
+          <ul>
+            <li><b>Steine etwas auseinanderlegen</b> – Steine, die sich berühren, sieht die App als einen.</li>
+            <li><b>Heller, einfarbiger Boden</b> – zum Beispiel ein weißes Blatt oder ein Tisch.</li>
+            <li><b>Von oben fotografieren</b> und lieber zwei Fotos mit weniger Steinen machen.</li>
+          </ul>
+          <p class="muted small">Die Erkennung braucht Internet. Nichts wird gespeichert außer auf deinem Handy.</p>
+        </div>
+      </div>
+
+      <div id="scanResult" hidden>
+        <div class="photo-wrap">
+          <img id="photo" alt="Dein Foto">
+          <canvas id="photoOverlay"></canvas>
+        </div>
+        <div class="progress" id="progress"><div class="bar" id="progressBar"></div><span id="progressText">Suche Steine …</span></div>
+        <div class="summary" id="scanSummary" hidden></div>
+        <div class="det-list" id="detList"></div>
+        <div class="sticky-actions" id="scanActions" hidden>
+          <button class="btn btn-ghost" id="btnDiscard">Verwerfen</button>
+          <button class="btn btn-primary" id="btnAdd">Hinzufügen</button>
+        </div>
+        <div class="after-add" id="afterAdd" hidden>
+          <div class="done-badge">✓</div>
+          <h3 id="afterAddText">Steine hinzugefügt!</h3>
+          <p class="muted">Du kannst noch mehr Fotos machen – die Steine werden zusammengezählt.</p>
+          <div class="row-actions">
+            <button class="btn btn-ghost" id="btnMore">Noch ein Foto</button>
+            <button class="btn btn-primary" id="btnToIdeas">Zu den Ideen</button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 2) Meine Steine -->
+    <section class="view" id="view-steine">
+      <div class="section-head">
+        <h2>Meine Steine</h2>
+        <label class="switch"><input type="checkbox" id="onlyOwned" checked><span>Nur vorhandene</span></label>
+      </div>
+      <p class="muted small">Tippe auf + oder −, um Steine von Hand zu ändern. Die Farbe spielt keine Rolle.</p>
+      <div id="invList"></div>
+      <div id="extraList"></div>
+      <button class="btn btn-danger-ghost" id="btnClear">Sammlung leeren</button>
+    </section>
+
+    <!-- 3) Ideen -->
+    <section class="view" id="view-ideen">
+      <button class="btn btn-design" id="btnDesign">
+        <span class="sparkle" aria-hidden="true">✦</span>
+        Neues Design
+      </button>
+      <div id="ideasEmpty" class="empty">
+        <p>Tippe auf <b>„Neues Design“</b> und die App zeigt dir, was du mit deinen Steinen bauen kannst.</p>
+      </div>
+      <div id="ideas"></div>
+    </section>
+
+    <!-- 4) Merkliste -->
+    <section class="view" id="view-merk">
+      <h2>Merkliste</h2>
+      <h3 class="group-title">♥ Favoriten</h3>
+      <div class="grid" id="favGrid"></div>
+      <h3 class="group-title">✓ Schon gebaut</h3>
+      <div class="grid" id="builtGrid"></div>
+    </section>
+  </main>
+
+  <nav class="tabbar" role="tablist">
+    <button class="tab active" data-view="scan" role="tab">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h3l2-3h6l2 3h3a1 1 0 0 1 1 1v11a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V8a1 1 0 0 1 1-1z"/><circle cx="12" cy="13" r="4"/></svg>
+      <span>Foto</span>
+    </button>
+    <button class="tab" data-view="steine" role="tab">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="2" y="10" width="20" height="10" rx="1.5"/><rect x="5" y="6" width="4" height="4" rx="1"/><rect x="15" y="6" width="4" height="4" rx="1"/></svg>
+      <span>Meine Steine</span>
+    </button>
+    <button class="tab" data-view="ideen" role="tab">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 18h6M10 21h4M12 3a6 6 0 0 0-3.5 10.9c.6.5 1 1.2 1 2V17h5v-1.1c0-.8.4-1.5 1-2A6 6 0 0 0 12 3z"/></svg>
+      <span>Ideen</span>
+    </button>
+    <button class="tab" data-view="merk" role="tab">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 20s-7-4.4-7-10a4 4 0 0 1 7-2.6A4 4 0 0 1 19 10c0 5.6-7 10-7 10z"/></svg>
+      <span>Merkliste</span>
+    </button>
+  </nav>
+
+  <!-- Bauanleitung -->
+  <div class="overlay" id="guide" hidden>
+    <div class="guide-top">
+      <button class="icon-btn" id="guideClose" aria-label="Schließen">
+        <svg viewBox="0 0 24 24"><path d="M15 5l-7 7 7 7"/></svg>
+      </button>
+      <h2 id="guideTitle">Modell</h2>
+      <button class="icon-btn heart" id="guideFav" aria-label="Merken">
+        <svg viewBox="0 0 24 24"><path d="M12 20s-7-4.4-7-10a4 4 0 0 1 7-2.6A4 4 0 0 1 19 10c0 5.6-7 10-7 10z"/></svg>
+      </button>
+    </div>
+    <div class="guide-stage">
+      <canvas id="guideCanvas"></canvas>
+      <div class="hint" id="guideHint">☝ Mit dem Finger drehen · ✌ zoomen</div>
+      <div class="step-badge" id="stepBadge">Teileliste</div>
+    </div>
+    <div class="guide-panel">
+      <div class="dots" id="stepDots"></div>
+      <div id="stepInfo"></div>
+      <div class="guide-nav">
+        <button class="btn btn-ghost btn-step" id="stepPrev">◀ Zurück</button>
+        <button class="btn btn-primary btn-step" id="stepNext">Los geht's ▶</button>
+      </div>
+    </div>
+    <div class="confetti" id="confetti" aria-hidden="true"></div>
+  </div>
+
+  <div class="toast" id="toast" role="status"></div>
+
+  <script src="js/bricks.js"></script>
+  <script src="js/models.js"></script>
+  <script src="js/renderer.js"></script>
+  <script src="js/detect.js"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>
